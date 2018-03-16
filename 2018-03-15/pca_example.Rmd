@@ -1,0 +1,93 @@
+---
+title: "PCA example"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Set up
+
+Load the wine dataset from rattle.data package and ggplot2/dplyr packages
+
+```{r}
+library(rattle.data)
+library(ggplot2)
+data("wine")
+knitr::kable(wine[1:10,])
+
+```
+
+## PCA unscaled
+
+Unless there's a good reason not to, PCA should always be carried out on scaled data, otherwise the variables with the biggest variance tend to dominate.  See what happens if we don't do this first
+
+Do the pca
+```{r}
+wine_pca <- prcomp(as.matrix(wine[,-1]))
+summary(wine_pca)
+```
+
+PC1 is accounting for almost all of the variance, so this PCA Isn't going to be very useful.
+
+Now do some standard plots:
+
+```{r}
+screeplot(wine_pca, type = "lines", main="Screeplot of unscaled wine data")
+biplot(wine_pca, main='Biplot of unscaled wine data')
+```
+
+In the screeplot we see again how PC1 accounts for almost all of the variance.  One of the variables is probably skewing things, which is why we need to scale.
+
+Let's now do our own plots to make them look nicer.  First extract the rotated data from the `prcomp` object into a data frame and add in the wine type from the original data:
+
+```{r}
+pca_data <- as.data.frame(wine_pca$x)
+pca_data$Type = wine$Type
+knitr::kable(pca_data[1:10,])
+```
+
+Now let's do our plot:
+
+```{r}
+ggplot(pca_data, aes(x=PC1, y=PC2, color=Type)) + geom_point()
+
+```
+
+Even not doing PCA properly we still see some seperation between classes.  Now let's do it properly.
+
+## PCA scaled
+
+Do the pca but set center and scale variables to true.
+```{r}
+wine_pca_scaled <- prcomp(as.matrix(wine[,-1]), center = TRUE, scale=TRUE)
+summary(wine_pca_scaled)
+```
+
+This time we see that the variance is more evenly spread between PC's.
+
+Now do some standard plots again:
+
+```{r}
+screeplot(wine_pca_scaled, type = "lines", main="Screeplot of unscaled wine data")
+biplot(wine_pca_scaled, main='Biplot of unscaled wine data')
+```
+
+In the screeplot we see again that the variance is better spread, and we can usefully use several of these.
+
+```{r}
+pca_data_scaled <- as.data.frame(wine_pca_scaled$x)
+pca_data_scaled$Type = wine$Type
+knitr::kable(pca_data_scaled[1:10,])
+```
+
+Now let's do our modified plot:
+
+```{r}
+ggplot(pca_data_scaled, aes(x=PC1, y=PC2, color=Type)) + geom_point()
+
+```
+
+Now we see nice seperation between classes.  This gives us some confidence that there is some structure in the data that we can use to build a meaningful predictive model.  Note that it is also worth looking at other PCs not just 1 and 2 since these might explain the variance more relevant to your class of interest.
+
